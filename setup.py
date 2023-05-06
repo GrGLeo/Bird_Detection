@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='bird_detection',
+    name='bird',
     version='0.1',
     author='LG',
     author_email='',
     description='',
-    packages=find_packages(),
+    packages=find_packages(where="Bird_Detection"),
 )

@@ -3,7 +3,7 @@ import shutil
 
 def train_test_directory():
     # Get path to raw_data
-    path = os.path.dirname(os.path.realpath(__file__))
+    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     data_path = os.path.join(path,"data\\raw_data\\training_set")
     dir_list = os.listdir(data_path)
 
@@ -47,5 +47,6 @@ def train_test_directory():
                 shutil.move(src_path, dest_path)
 
 if __name__ == "__main__":
+    
     train_test_directory()
     print("All files moved")
