@@ -1,0 +1,6 @@
+README.md
+setup.py
+bird.egg-info/PKG-INFO
+bird.egg-info/SOURCES.txt
+bird.egg-info/dependency_links.txt
+bird.egg-info/top_level.txt
