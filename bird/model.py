@@ -38,10 +38,28 @@ class Model(nn.Module):
         x = self.classifier(x)
         return x
 
-def calc_accuracy(outputs,labels):
-
-    _, predicted = torch.max(outputs.data,1)
-    total = labels.size(0)
-    correct = (predicted == labels).sum().item()
+def calc_metrics(model,loss_fc,data):
+    data_loss = 0
+    correct = 0
+    total = 0
+    for i,batch in enumerate(data,0):
+        inputs, labels = batch
+        inputs = inputs.to("cuda")
+        labels = labels.to("cuda")
+        outputs = model(inputs)
+        batch_loss = loss_fc(outputs,labels)
+        batch_loss = batch_loss.item()
+        _, predicted = torch.max(outputs.data,1)
+        data_loss += batch_loss
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
     accuracy = (correct/total) * 100
-    return accuracy
+    loss = data_loss/(i+1)
+    return loss,accuracy
+    
+def batch_calc_metrics(outputs,labels):
+        _,predicted = torch.max(outputs.data,1)
+        total = labels.size(0)
+        correct = (predicted == labels).sum().item()
+        accuracy = (correct/total) * 100
+        return accuracy

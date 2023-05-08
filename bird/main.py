@@ -1,4 +1,4 @@
-from model import Model,  calc_accuracy
+from model import Model,  calc_metrics, batch_calc_metrics
 from data_loader import data_load
 import time
 from tqdm import tqdm
@@ -13,18 +13,6 @@ LEARNING_RATE = 1e-4
 
 # Load data
 train,val,test = data_load()
-val_inputs, val_labels = [], []
-train_inputs, train_labels = [], []
-for inputs, labels in train:
-    train_inputs.append(inputs)
-    train_labels.append(labels)
-for inputs, labels in val:
-    val_inputs.append(inputs)
-    val_labels.append(labels)
-train_inputs = torch.cat(train_inputs)
-train_labels = torch.cat(train_labels)
-val_inputs = torch.cat(val_inputs)
-val_labels = torch.cat(val_labels) 
 
 model = Model()
 criterion = nn.CrossEntropyLoss()
@@ -36,16 +24,19 @@ if torch.cuda.is_available():
 else:
     device = torch.device("cpu")   # use the CPU
 
+# Move the model to the GPU
+model.to(device)
+
 # Early_Stopping
 best_val_loss = float('inf')
 epoch_since_improvement = 0
 patience = 5
 
-for epoch in range(1):
-    # Move the model to the GPU
-    model.to(device)
+for epoch in range(10):
     # Progress bar
     progress_bar = tqdm(total=len(train),desc="Training",position=0)
+    epoch_loss = 0
+    epoch_acc = 0
     for i, data in enumerate(train, 0):
         # Time step
         start_time = time.time()
@@ -62,7 +53,10 @@ for epoch in range(1):
         optimizer.step()
         # Metrics
         batch_loss = loss.item()
-        accuracy = calc_accuracy(outputs,labels)
+        accuracy = batch_calc_metrics(outputs,labels)
+        # Epoch metrics
+        epoch_loss += batch_loss
+        epoch_acc += accuracy
         # Time step
         end_time = time.time()
         step_time = end_time - start_time
@@ -71,16 +65,12 @@ for epoch in range(1):
     progress_bar.close()
     
     # Calculate loss & val_loss
-    model.to("cpu")
     with torch.no_grad():
-        # loss
-        y_train_pred = model(train_inputs)
-        loss = criterion(y_train_pred, train_labels).item()
-        acc = calc_accuracy(y_train_pred,train_labels)
-        # val_loss
-        y_val_pred = model(val_inputs)
-        val_loss = criterion(y_val_pred, val_labels).item()
-        val_acc = calc_accuracy(y_val_pred, val_labels)
+        # train
+        epoch_loss /= len(train)
+        epoch_acc /= len(train)
+        # val
+        val_loss,val_acc = calc_metrics(model,criterion,val)
 
     # Early Stopping logic
     if val_loss < best_val_loss:
@@ -93,7 +83,7 @@ for epoch in range(1):
         print(f"Early Stopping after {epoch+1}")
         break
     
-    print(f'Epoch: {epoch} -- loss:{round(loss,4)} -- acc:{round(acc,2)} -- val_loss:{round(val_loss,4)} -- val_acc:{round(val_acc,2)}')
+    print(f'Epoch: {epoch} -- loss:{round(epoch_loss,4)} -- acc:{round(epoch_acc,2)} -- val_loss:{round(val_loss,4)} -- val_acc:{round(val_acc,2)}')
 
 # Save model
 path_to_save = rf"D:\Coding\bird_detection\Bird_Detection\models\{str(time.time())[:5]}.pth"
