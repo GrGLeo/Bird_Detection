@@ -62,7 +62,7 @@ for epoch in range(1):
         optimizer.step()
         # Metrics
         batch_loss = loss.item()
-        accuracy = calc_accuracy(model,inputs,labels)
+        accuracy = calc_accuracy(outputs,labels)
         # Time step
         end_time = time.time()
         step_time = end_time - start_time
@@ -71,16 +71,16 @@ for epoch in range(1):
     progress_bar.close()
     
     # Calculate loss & val_loss
-    model.to("CPU")
+    model.to("cpu")
     with torch.no_grad():
         # loss
         y_train_pred = model(train_inputs)
         loss = criterion(y_train_pred, train_labels).item()
-        acc = calc_accuracy(model,train_inputs,train_labels)
+        acc = calc_accuracy(y_train_pred,train_labels)
         # val_loss
         y_val_pred = model(val_inputs)
         val_loss = criterion(y_val_pred, val_labels).item()
-        val_acc = calc_accuracy(model, val_inputs, val_labels)
+        val_acc = calc_accuracy(y_val_pred, val_labels)
 
     # Early Stopping logic
     if val_loss < best_val_loss:

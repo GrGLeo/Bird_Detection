@@ -38,11 +38,10 @@ class Model(nn.Module):
         x = self.classifier(x)
         return x
 
-def calc_accuracy(model,inputs,labels):
-        with torch.no_grad():
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data,1)
-            total = labels.size(0)
-            correct = (predicted == labels).sum().item()
-        accuracy = (correct/total) * 100
-        return accuracy
+def calc_accuracy(outputs,labels):
+
+    _, predicted = torch.max(outputs.data,1)
+    total = labels.size(0)
+    correct = (predicted == labels).sum().item()
+    accuracy = (correct/total) * 100
+    return accuracy
