@@ -44,7 +44,7 @@ best_val_loss = float('inf')
 epoch_since_improvement = 0
 patience = 5
 
-for epoch in range(10):
+for epoch in range(5):
     # Progress bar
     progress_bar = tqdm(total=len(train),desc="Training",position=0)
     epoch_loss = 0
