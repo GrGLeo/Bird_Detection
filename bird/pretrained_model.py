@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import torch
 import torchvision
@@ -12,43 +13,14 @@ class Model(nn.Module):
     def __init__(self,device="cuda"):
         super(Model,self).__init__()
         self.device = device
-        self.features = nn.Sequential(
-            nn.Conv2d(3,64,kernel_size=3,padding=1), 
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2,stride=2), 
-            nn.Conv2d(64,128,kernel_size=3,padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128,128,kernel_size=3,padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128,128,kernel_size=3,padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(128,256,kernel_size=3,padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256,256,kernel_size=3,padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-            )
-        self.avgpool = nn.AdaptiveAvgPool2d((6,6))
-        self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(256*6*6,4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096,25)
-        )
+        self.model = torchvision.models.efficientnet_v2_s(pretrained=True)
+        num_ftrs = self.model.classifier[-1].in_features
+        self.model.classifier[-1] = nn.Linear(num_ftrs, 25) 
         self.to(device)
-
-    def forward(self, x):
-        x = self.features(x)
-        x = self.avgpool(x)
-        x = x.view(x.size(0), 256*6*6)
-        x = self.classifier(x)
-        return x
     
     def fit(self,train,val,epochs,learning_rate=1e-4,early_stop=False,patience=0):
         # Verify model is in training mode
-        assert self.training, "Set model to train()"
+        assert self.model.training, "Set model to train()"
 
         # Instanciate loss and optimizer
         self.criterion = nn.CrossEntropyLoss()
@@ -59,7 +31,7 @@ class Model(nn.Module):
         epoch_since_improvement = 0
 
         # Epoch loop
-        self.train()
+        self.model.train()
         for epoch in range(epochs):
             # Progress bar
             progress_bar = tqdm(total=len(train),desc="Training",position=0)
@@ -67,14 +39,14 @@ class Model(nn.Module):
             epoch_acc = 0 
             
             # Batch loop
-            for inputs, labels in train, :
+            for inputs, labels in train:
                 # Get the inputs
                 inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
                 # Zero the parameters gradients
                 self.optimizer.zero_grad()
                 # Forward + Backward + Optimize
-                outputs = self(inputs)
+                outputs = self.model(inputs)
                 loss = self.criterion(outputs,labels)
                 loss.backward()
                 self.optimizer.step()
@@ -90,7 +62,7 @@ class Model(nn.Module):
             progress_bar.close()
             
             # Calculate loss & val_loss
-            self.eval()
+            self.model.eval()
             with torch.no_grad():
                 # train
                 epoch_loss /= len(train)
@@ -115,7 +87,7 @@ class Model(nn.Module):
             
         # Save model
         path_to_save = rf"D:\Coding\bird_detection\Bird_Detection\models\{str(time.time())[-6:]}.pth"
-        torch.save(self.state_dict(),path_to_save)
+        torch.save(self.model.state_dict(),path_to_save)
 
     def calc_metrics(self,data):
         data_loss = 0
@@ -125,7 +97,7 @@ class Model(nn.Module):
             inputs, labels = batch
             inputs = inputs.to("cuda")
             labels = labels.to("cuda")
-            outputs = self(inputs)
+            outputs = self.model(inputs)
             batch_loss = self.criterion(outputs,labels)
             batch_loss = batch_loss.item()
             _, predicted = torch.max(outputs.data,1)
@@ -145,17 +117,20 @@ class Model(nn.Module):
     
 
     def prediction(self, X):
-        self.eval()
-        y_pred = self.forward(X)
+        self.model.eval()
+        y_pred = self.model.forward(X)
 
         labels_name = os.listdir(r"D:\Coding\bird_detection\Bird_Detection\data\train")
+        idx = torch.argmax(y_pred)
+        probabilities = F.softmax(y_pred, dim=1)
+        print(f"Confidence in the prediction: {round(probabilities[0][idx].item()*100,2)}")
 
         labels = labels_name[torch.argmax(y_pred)]
 
-        self.train()
+        self.model.train()
         return labels
     
     def load(self,path):
-         self.load_state_dict(torch.load(path))
+         self.model.load_state_dict(torch.load(path))
     
          
