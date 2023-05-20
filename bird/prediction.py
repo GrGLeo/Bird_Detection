@@ -3,8 +3,6 @@ import torch.nn as nn
 import torchvision
 import os
 
-from data_loader import data_load
-
 
 def prediction(model, X):
     model.eval()
@@ -18,7 +16,5 @@ def prediction(model, X):
 
 model = torchvision.models.efficientnet_v2_s(pretrained=True)
 model = model.load_state_dict(torch.load(r"D:\Coding\bird_detection\Bird_Detection\models\934584.pth"))
-
-train,val,test = data_load()
 
 
