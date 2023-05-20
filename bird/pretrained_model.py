@@ -123,14 +123,12 @@ class Model(nn.Module):
         labels_name = os.listdir(r"D:\Coding\bird_detection\Bird_Detection\data\train")
         idx = torch.argmax(y_pred)
         probabilities = F.softmax(y_pred, dim=1)
-        print(f"Confidence in the prediction: {round(probabilities[0][idx].item()*100,2)}")
+        confidence = round(probabilities[0][idx].item()*100,2)
 
         labels = labels_name[torch.argmax(y_pred)]
 
         self.model.train()
-        return labels
+        return labels, confidence
     
-    def load(self,path):
-         self.model.load_state_dict(torch.load(path))
     
          
