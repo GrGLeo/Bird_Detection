@@ -6,6 +6,9 @@ import os
 
 BATCH_SIZE = 32
 def data_load():
+    """
+    Return the DataLoader object for the train,val and test datasets.
+    """
     # Instanciate path
     data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"data")
     train_path = os.path.join(data_path,"train")

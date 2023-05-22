@@ -46,7 +46,20 @@ class Model(nn.Module):
         x = self.classifier(x)
         return x
     
-    def fit(self,train,val,epochs,learning_rate=1e-4,early_stop=False,patience=0):
+    def fit(self,train,val,epochs:int,learning_rate:float=1e-4,early_stop:bool=False,patience:int=0):
+        """
+        train: DataLoader
+        val: DataLoader
+        epochs: number of epochs to train the model on
+        learning_rate: 
+        early_stop: Boolean value to use an EarlyStopping on the training or not
+        patience: If early_stop set on True, patience used before training loop break, monitoring val_loss
+
+        Run the training loop and fit the model doing forward and backward propagation. Will show loss, acc
+        val_loos, and val_acc on each epochs
+
+        Return fitted model
+        """
         # Verify model is in training mode
         assert self.training, "Set model to train()"
 
@@ -118,6 +131,10 @@ class Model(nn.Module):
         torch.save(self.state_dict(),path_to_save)
 
     def calc_metrics(self,data):
+        """data: DataLoader
+        
+        Calculate loss and accuracy on the dataset
+        """
         data_loss = 0
         correct = 0
         total = 0
@@ -137,6 +154,9 @@ class Model(nn.Module):
         return loss,accuracy
     
     def batch_calc_metrics(self,outputs,labels):
+            """
+            Quickly calculate the batch accuracy using the outputs of the forward method
+            """
             _,predicted = torch.max(outputs.data,1)
             total = labels.size(0)
             correct = (predicted == labels).sum().item()
@@ -145,6 +165,9 @@ class Model(nn.Module):
     
 
     def prediction(self, X):
+        """
+        Return the predicted label and the confidence in percent
+        """
         self.eval()
         y_pred = self.forward(X)
 
@@ -154,8 +177,5 @@ class Model(nn.Module):
 
         self.train()
         return labels
-    
-    def load(self,path):
-         self.load_state_dict(torch.load(path))
     
          
